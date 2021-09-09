@@ -6,36 +6,66 @@ import scipy.spatial.distance as sp_dist
 import geopy.distance as gp_dist
 
 
+def calculate_saturation_pressure(ta):
+    """
+    (xarray.DataArray) -> xarray.DataArray
+
+    Calculates the saturation pressure.
+
+    Argument:
+    ta:       Temperature Array in Kelvin
+    """
+    return 6.1094 * np.exp((17.625 * (ta - 273.15)) / (ta - 30.11))
+
+
+def calculate_relative_humidity(hus, plev, es):
+    """
+    Calculate the relative humidity
+
+    Arguments:
+    hus:        specific humidity
+    plev:       level in hPa
+    es:         saturation pressure
+    """
+    return (hus * (plev - es)) / (0.622 * (1 - hus) * es)
+
+
+def calculate_dewpoint_temperature(e):
+    """
+    Calculates the dewpoint from the vapour pressure
+
+    Input:
+    e:      Vapour Pressure
+    """
+    return ((243.5 * np.log(e / 6.112)) / (17.67 - np.log(e / 6.112))) + 273.15
+
+
 def wetbulb(ta, hus, plev, steps=100, ta_units=None):
-    # calculates wetbulb temperature from pressure-level data
-    # Inputs: ta - temperature field (xarray)
-    #         hus - specific humidity field (xarray)
-    #         plev - the level of the data (in hPa, scalar)
-    #         steps -  the number of steps in the numerical calculation
-    #         ta_units - the units of the temperature field (if not provided, read from ta)
-    if ta_units == None:
+    """
+    calculates wetbulb temperature from pressure-level data
+    Inputs: ta - temperature field (xarray)
+            hus - specific humidity field (xarray)
+            plev - the level of the data (in hPa, scalar)
+            steps -  the number of steps in the numerical calculation
+            ta_units - the units of the temperature field (if not provided, read from ta)
+    """
+    if ta_units is None:
         ta_units = ta.units
     # saturation vapor pressure
-    if ta_units == "K" or ta_units == "Kelvin" or ta_units == "kelvin":
-        es = 6.1094 * np.exp((17.625 * (ta - 273.15)) / (ta - 30.11))
-    elif (
-        ta_units == "C"
-        or ta_units == "degC"
-        or ta_units == "deg_C"
-        or ta_units == "Celcius"
-        or ta_units == "celcius"
-    ):
-        es = 6.1094 * np.exp((17.625 * (ta)) / (ta + 243.04))
+    if ta_units.lower() in ["k", "kelvin"]:
+        es = calculate_saturation_pressure(ta)
+    elif ta_units.lower() in ["c", "degc", "deg_c", "celsius"]:
+        es = calculate_saturation_pressure(ta+273.15)
     else:
         raise ValueError(
             "Input temperature unit not recognised, use Kelvin (K) or Celcius (C, degC, deg_C)"
         )
     # relative humidity from specific humidity and sat. vap. pres.
-    rh = (hus * (plev - es)) / (0.622 * (1 - hus) * es)
+    rh = calculate_relative_humidity(hus, plev, es)
     # vapor pressure
     e = es * rh
     # dewpoint temperature
-    t_dewpoint = ((243.5 * np.log(e / 6.112)) / (17.67 - np.log(e / 6.112))) + 273.15
+    t_dewpoint = calculate_dewpoint_temperature(e)
 
     # unlike the above, calculating the wetbulb temperature is done numerically
     delta_t = (ta - t_dewpoint) / steps
@@ -44,7 +74,7 @@ def wetbulb(ta, hus, plev, steps=100, ta_units=None):
 
     for i in range(steps):
         cur_t = ta - i * delta_t
-        es_cur_t = 6.1094 * np.exp((17.625 * (cur_t - 273.15)) / (cur_t - 30.11))
+        es_cur_t = calculate_saturation_pressure(cur_t)
         adiabatic_adj = 850 * (ta - cur_t) * (0.00066) * (1 + 0.00115 * cur_t)
         diff = np.abs(es_cur_t - adiabatic_adj - e)
         t_wet.data[diff < cur_diff] = cur_t.data[diff < cur_diff]
@@ -54,30 +84,26 @@ def wetbulb(ta, hus, plev, steps=100, ta_units=None):
 
 
 def dewpoint(ta, hus, plev, ta_units=None):
-    # calculates depoint temperature from pressure-level data
-    # Inputs: ta - temperature field (xarray)
-    #         hus - specific humidity field (xarray)
-    #         plev - the level of the data (in hPa, scalar)
-    #         ta_units - the units of the temperature field (if not provided, read from ta)
-    if ta_units == None:
+    """
+    calculates depoint temperature from pressure-level data
+    Inputs: ta - temperature field (xarray)
+            hus - specific humidity field (xarray)
+            plev - the level of the data (in hPa, scalar)
+            ta_units - the units of the temperature field (if not provided, read from ta)
+    """
+    if ta_units is None:
         ta_units = ta.units
-    if ta_units == "K" or ta_units == "Kelvin" or ta_units == "kelvin":
-        es = 6.1094 * np.exp((17.625 * (ta - 273.15)) / (ta - 30.11))
-    elif (
-        ta_units == "C"
-        or ta_units == "degC"
-        or ta_units == "deg_C"
-        or ta_units == "Celcius"
-        or ta_units == "celcius"
-    ):
-        es = 6.1094 * np.exp((17.625 * (ta)) / (ta + 243.04))
+    if ta_units.lower() in ["k", "kelvin"]:
+        es = calculate_saturation_pressure(ta)
+    elif ta_units.lower() in ["c", "degc", "deg_c", "celsius"]:
+        es = calculate_saturation_pressure(ta+273.15)
     else:
         raise ValueError(
             "Input temperature unit not recognised, use Kelvin (K) or Celcius (C, degC, deg_C)"
         )
-    rh = (hus * (plev - es)) / (0.622 * (1 - hus) * es)
+    rh = calculate_relative_humidity(hus, plev, es)
     e = es * rh
-    t_dewpoint = ((243.5 * np.log(e / 6.112)) / (17.67 - np.log(e / 6.112))) + 273.15
+    t_dewpoint = calculate_dewpoint_temperature(e)
     return t_dewpoint
 
 
