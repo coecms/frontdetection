@@ -40,14 +40,19 @@ def calculate_dewpoint_temperature(e):
     return ((243.5 * np.log(e / 6.112)) / (17.67 - np.log(e / 6.112))) + 273.15
 
 
-def wetbulb(ta, hus, plev, steps=100, ta_units=None):
+def calculate_atmospheric_fields(ta, hus, plev, ta_units=None):
     """
-    calculates wetbulb temperature from pressure-level data
-    Inputs: ta - temperature field (xarray)
-            hus - specific humidity field (xarray)
-            plev - the level of the data (in hPa, scalar)
-            steps -  the number of steps in the numerical calculation
-            ta_units - the units of the temperature field (if not provided, read from ta)
+    Calculates the Saturation Pressure, the Vapour Pressure, 
+    the Relative Humidity, and the Dewpoint Temperature.
+
+    Inputs:
+    ta:         Temperature
+    hus:        Specific Humidity
+    plev:       Level of Data (hPa)
+    ta_units:   (Optional) units of ta. Defaults to ta.units.
+
+    Output:
+    Tuple(Saturation Pressure, Vapour Pressure, Relative Humidity, Dewpoint Temperature)
     """
     if ta_units is None:
         ta_units = ta.units
@@ -66,6 +71,21 @@ def wetbulb(ta, hus, plev, steps=100, ta_units=None):
     e = es * rh
     # dewpoint temperature
     t_dewpoint = calculate_dewpoint_temperature(e)
+
+    return (es, rh, e, t_dewpoint)
+
+
+def wetbulb(ta, hus, plev, steps=100, ta_units=None):
+    """
+    calculates wetbulb temperature from pressure-level data
+    Inputs: ta - temperature field (xarray)
+            hus - specific humidity field (xarray)
+            plev - the level of the data (in hPa, scalar)
+            steps -  the number of steps in the numerical calculation
+            ta_units - the units of the temperature field (if not provided, read from ta)
+    """
+
+    es, _, e, t_dewpoint = calculate_atmospheric_fields(ta, hus, plev, ta_units)
 
     # unlike the above, calculating the wetbulb temperature is done numerically
     delta_t = (ta - t_dewpoint) / steps
@@ -91,19 +111,9 @@ def dewpoint(ta, hus, plev, ta_units=None):
             plev - the level of the data (in hPa, scalar)
             ta_units - the units of the temperature field (if not provided, read from ta)
     """
-    if ta_units is None:
-        ta_units = ta.units
-    if ta_units.lower() in ["k", "kelvin"]:
-        es = calculate_saturation_pressure(ta)
-    elif ta_units.lower() in ["c", "degc", "deg_c", "celsius"]:
-        es = calculate_saturation_pressure(ta+273.15)
-    else:
-        raise ValueError(
-            "Input temperature unit not recognised, use Kelvin (K) or Celcius (C, degC, deg_C)"
-        )
-    rh = calculate_relative_humidity(hus, plev, es)
-    e = es * rh
-    t_dewpoint = calculate_dewpoint_temperature(e)
+
+    _, _, _, t_dewpoint = calculate_atmospheric_fields(ta, hus, plev, ta_units)
+
     return t_dewpoint
 
 
