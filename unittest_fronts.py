@@ -48,7 +48,7 @@ class DataGenerator:
         )
 
 
-class TestTest(unittest.TestCase):
+class Test_Saturation_Pressure(unittest.TestCase):
     def test_saturation_pressure_negative(self):
         t_in = -12.0 + 273.15
         self.assertAlmostEqual(calculate_saturation_pressure(t_in), 2.4459, places=4)
@@ -61,6 +61,14 @@ class TestTest(unittest.TestCase):
         t_in = 21.0 + 273.15
         self.assertAlmostEqual(calculate_saturation_pressure(t_in), 24.81888, places=4)
 
+class Test_Dewpoint_Temperature(unittest.TestCase):
+    def test_dewpoint_temperature(self):
+        self.assertFalse(True, msg="Dewpoint Temperature Tests not yet implemented")
+
+
+class Test_Relative_Humidity(unittest.TestCase):
+    def test_relative_humidity(self):
+        self.assertFalse(True, msg="Relative Humidity Test not yet implemented")
 
 if __name__ == '__main__':
     unittest.main()
