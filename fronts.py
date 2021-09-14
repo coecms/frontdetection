@@ -152,65 +152,6 @@ def zeropoints(data, dim1, dim2):
         ])
 
     return np.array(zero_locations)
-        
-
-def zeropoints2(data, dim1, dim2):
-    # finds zero-crossing points in a gridded data set along the lines of each dimension
-    # inputs: data - 2d data field (numpy array)
-    #         dim1 - coords of the first dim of data (np array)
-    #         dim2 - coords of the second dim of data (np array)
-    n1, n2 = data.shape
-    # assuming regularly spaced grid:
-    d_dim2 = dim2[1] - dim2[0]
-    d_dim1 = dim1[1] - dim1[0]
-    tloc_1 = []
-    tloc_2 = []
-    for lonn in range(0, n2 - 1):
-        for latn in range(0, n1 - 1):
-            flag = False
-            if data[latn, lonn] == 0:
-                tloc_1.append([dim1[latn], dim2[lonn]])
-                flag = True
-            else:
-                if (
-                    np.isfinite(data[latn, lonn])
-                    and np.isfinite(data[latn, lonn + 1])
-                    and not flag
-                ):
-                    if (data[latn, lonn] > 0 and data[latn, lonn + 1] < 0) or (
-                        data[latn, lonn] < 0 and data[latn, lonn + 1] > 0
-                    ):
-                        tloc_1.append(
-                            [
-                                dim1[latn],
-                                dim2[lonn]
-                                + d_dim2
-                                * np.abs(
-                                    data[latn, lonn]
-                                    / (data[latn, lonn] - data[latn, lonn + 1])
-                                ),
-                            ]
-                        )
-                if (
-                    np.isfinite(data[latn, lonn])
-                    and np.isfinite(data[latn + 1, lonn])
-                    and not flag
-                ):
-                    if (data[latn, lonn] > 0 and data[latn + 1, lonn] < 0) or (
-                        data[latn, lonn] < 0 and data[latn + 1, lonn] > 0
-                    ):
-                        tloc_2.append(
-                            [
-                                dim1[latn]
-                                + d_dim1
-                                * np.abs(
-                                    data[latn, lonn]
-                                    / (data[latn, lonn] - data[latn + 1, lonn])
-                                ),
-                                dim2[lonn],
-                            ]
-                        )
-    return np.array(tloc_1 + tloc_2)
 
 
 def frontfields(data, ua, va, threshold=-0.3e-10):
