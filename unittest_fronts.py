@@ -90,11 +90,11 @@ class Test_Zeropoints(unittest.TestCase):
     def test_zeropoints_on_grid(self):
         d, d1, d2 = self.create_data(
             [[-1, 0, 1], 
-             [-1, 0, 1],
-             [-1, 0, 1]]
+             [-1, np.nan, 1],
+             [-1, np.nan, 1]]
         )
         res = zeropoints(d, d1, d2)
-        expected = np.array([[0, 1], [1, 1]])
+        expected = np.array([[0, 1]])
         np.testing.assert_allclose(res, expected)
 
     def test_zeropoints_between_grid(self):
@@ -104,7 +104,7 @@ class Test_Zeropoints(unittest.TestCase):
              [-1, 1, 1]]
         )
         res = zeropoints(d, d1, d2)
-        expected = np.array([[0, 0.5], [1, 0.5]])
+        expected = np.array([[0, 0.5], [1, 0.5], [2, 0.5]])
         np.testing.assert_allclose(res, expected)
 
     def test_zeropoints_on_grid_y(self):
@@ -114,7 +114,7 @@ class Test_Zeropoints(unittest.TestCase):
              [ 1,  1,  1]]
         )
         res = zeropoints(d, d1, d2)
-        expected = np.array([[1, 0], [1, 1]])
+        expected = np.array([[1, 0], [1, 1], [1, 2]])
         np.testing.assert_allclose(res, expected)
 
     def test_zeropoints_between_grid_y(self):
@@ -124,7 +124,7 @@ class Test_Zeropoints(unittest.TestCase):
              [1, 1, 1]]
         )
         res = zeropoints(d, d1, d2)
-        expected = np.array([[0.5, 0], [0.5, 1]])
+        expected = np.array([[0.5, 0], [0.5, 1], [0.5, 2]])
         np.testing.assert_allclose(res, expected)
 
     def test_zeropoints_fractional(self):
@@ -134,7 +134,7 @@ class Test_Zeropoints(unittest.TestCase):
              [1, 1, 1]]
         )
         res = zeropoints(d, d1, d2)
-        expected = np.array([[0.25, 0], [0.25, 1]])
+        expected = np.array([[0.25, 0], [0.25, 1], [0.25, 2]])
         np.testing.assert_allclose(res, expected)
 
     def test_zeropoints_diagonal(self):
@@ -144,7 +144,7 @@ class Test_Zeropoints(unittest.TestCase):
              [1, 1, 4]]
         )
         res = zeropoints(d, d1, d2)
-        expected = np.array([[0, 4/3], [1, 1], [5/3, 0]])
+        expected = np.array([[1, 1], [0, 4/3], [5/3, 0]])
         np.testing.assert_allclose(res, expected)
 
 
