@@ -155,6 +155,7 @@ def zeropoints(data, dim1, dim2):
                     (interp.interp1d(dim2_data[i : i + 2], dim2[i : i + 2])(0))
                     .astype(float)
                     .item(),
+                    float(dim2[i]),
                 ]
                 for i in np.where(indicator_array < 0)[0]
             ]
@@ -176,6 +177,7 @@ def zeropoints(data, dim1, dim2):
                     .astype(float)
                     .item(),
                     float(dim2_val),
+                    float(dim1[i]),
                 ]
                 for i in np.where(indicator_array < 0)[0]
             ]
@@ -239,6 +241,7 @@ def zeropoints2(data, dim1, dim2):
                                         / (data[latn, lonn] - data[latn, lonn + 1])
                                     )
                                 ),
+                                float(dim2[lonn]),
                             ]
                         )
                 if (
@@ -271,6 +274,7 @@ def zeropoints2(data, dim1, dim2):
                                     )
                                 ),
                                 float(dim2[lonn]),
+                                float(dim1[latn]),
                             ]
                         )
     with open(f"test_zeropoints2.json", "w") as testfile:
@@ -471,9 +475,9 @@ def front(
 
     loc, fr_speed, mag = frontfields(data, u, v, threshold_i)
     if "lon" in data.dims:
-        out = zeropoints2(loc.data, loc.lat.data, loc.lon.data)
+        out = zeropoints(loc.data, loc.lat.data, loc.lon.data)
     else:
-        out = zeropoints2(loc.data, loc.latitude.data, loc.longitude.data)
+        out = zeropoints(loc.data, loc.latitude.data, loc.longitude.data)
 
     lats = xr.DataArray(out[:, 0], dims="pts")
     lons = xr.DataArray(out[:, 1], dims="pts")

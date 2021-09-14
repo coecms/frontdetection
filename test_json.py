@@ -14,12 +14,23 @@ def df_peroutput(newdump, olddump, out_type):
     out_type: ["along_lat" | "along_lon"]
     """
 
-    df = pd.DataFrame(newdump[out_type], columns=["lat", "lon"])
+    col3 = "true_lat"
+    sort_by = ["lon", "true_lat"]
+    ascending_by = [True, False]  # Allows to have additional values at the end
+    if out_type == "along_lat":
+        col3 = "true_lon"
+        sort_by = ["lat", "true_lon"]
+        ascending_by = [False, True]  # Allows to have additional values at the end
 
-    df_oldvers = pd.DataFrame(olddump[out_type], columns=["lat", "lon"])
-    sort_oldvers = df_oldvers.sort_values(by=["lat", "lon"], ascending=[False, True])
+    df = pd.DataFrame(newdump[out_type], columns=["lat", "lon", col3])
+    sort_df = df.sort_values(by=sort_by, ascending=ascending_by)
 
-    return (df, sort_oldvers)
+    df_oldvers = pd.DataFrame(olddump[out_type], columns=["lat", "lon", col3])
+    sort_oldvers = df_oldvers.sort_values(by=sort_by, ascending=ascending_by)
+
+    sort_df.reset_index(drop=True, inplace=True),
+    sort_oldvers.reset_index(drop=True, inplace=True),
+    return (sort_df, sort_oldvers)
 
 
 new_along_lat, old_along_lat = df_peroutput(jdump, jdump_oldvers, "along_lat")
@@ -29,3 +40,17 @@ print(new_along_lon)
 print(old_along_lon)
 print(f"along_lat comparison: ", old_along_lat.equals(new_along_lat))
 print(f"along_lon comparison: ", old_along_lon.equals(new_along_lon))
+
+# Difference of along_lon
+# All values are equal except for the additional values
+# found by new version.
+diff = new_along_lon - old_along_lon
+diff_nozeros = diff.loc[~(diff == 0).all(axis=1)]
+print(diff_nozeros)
+
+# Difference of along_lat
+# All values are equal except for the additional values
+# found by new version.
+diff = new_along_lat - old_along_lat
+diff_nozeros = diff.loc[~(diff == 0).all(axis=1)]
+print(diff_nozeros)
