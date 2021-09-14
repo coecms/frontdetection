@@ -42,6 +42,8 @@ def calculate_dewpoint_temperature(e):
 
 def calculate_atmospheric_fields(ta, hus, plev, ta_units=None):
     """
+    (DataArray, DataArray, Numeric, Str) -> DataArray, DataArray, DataArray, DataArray
+    
     Calculates the Saturation Pressure, the Vapour Pressure, 
     the Relative Humidity, and the Dewpoint Temperature.
 
