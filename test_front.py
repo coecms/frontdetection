@@ -23,6 +23,10 @@ def test_era5():
     frontdata=fronts.front(t_wet,ua,va,threshold_i=-1e-10,numsmooth=9,minlength=50)
     
     timestring=np.datetime_as_string(tafile.time.data[n],unit='h')
+
+    with open('tests/test_fronts.json', 'w') as outfile:
+        json.dump(frontdata, outfile)
+
     with open(f'tests/900hPa_fronts_{timestring}.json') as sample_file:
         sample = json.load(sample_file)
 
