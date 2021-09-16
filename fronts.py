@@ -120,6 +120,7 @@ def dewpoint(ta, hus, plev, ta_units=None):
 
     return t_dewpoint
 
+
 def zeropoints(data, dim1, dim2):
     """
     finds zero-crossing points in a gridded data set along the lines of each dimension
@@ -214,6 +215,59 @@ def frontfields(data, ua, va, threshold=-0.3e-10):
     return loc, fr_speed, mag
 
 
+def follow_line(inpts, initial_index, searchdist, used, templat=[], templon=[]):
+    """
+    Builds a line of nearest neighbours, starting with inpts[initial_index], and returns
+    their longitudes and latitudes in a tuple of two lists.
+    """
+    current_index = initial_index
+    while True:
+        shortest_distance_so_far = np.inf
+        for comparison_index in range(ptcount):
+            ## Only look at points that aren't yet
+            ## part of any line.
+            if used[comparison_index]:
+                continue
+
+            distance = sp_dist.euclidean((inpts[current_index]), (inpts[comparison_index]))
+
+            ## Check if distance to new point is shorter
+            ## than previous nearest
+            if 0 < distance < shortest_distance_so_far:
+                shortest_distance_so_far = distance
+                nearest_neighbor_index = comparison_index
+
+        ## If nearest point is too far away, we've reached the end
+        ## of this side of the line.
+        if shortest_distance_so_far >= searchdist:
+            break
+
+        ## Since it wasn't too far away, add it to the current line,
+        ## and then check again from here.
+        used[nearest_neighbor_index] = True
+        templat.append(inpts[nearest_neighbor_index, 0])
+        templon.append(inpts[nearest_neighbor_index, 1])
+        current_index = nearest_neighbor_index   
+    return templat, templon
+
+
+def line_filter(line, min_length, min_lon_extend):
+    """(List of List of float, float, float) -> bool
+    Checks whether line adheres to two rules:
+    1. The total distance in km between the first and last
+       point on the line must be at least min_length.
+    2. The minimum extension in longitude must exceed min_lon_extend
+    """
+    lon_extent = max(line[1]) - min(line[1])
+    if lon_extent < min_lon_extend:
+        return False
+
+    ln_dist = gp_dist.distance(
+        (line[0][0], line[1][0]), (line[0][-1], line[1][-1])
+    ).km
+    return ln_dist > min_length
+
+
 def linejoin(inpts, searchdist=1.5, minlength=250, lonex=0):
     # turns a list of lat-lon points into a list of joined lines
     # INPUTS: inpts - the list of points (list of lat-lon points)
@@ -222,75 +276,38 @@ def linejoin(inpts, searchdist=1.5, minlength=250, lonex=0):
     #         minlength - minimum end-to-end length of the lines (in km)
     #         lonex - minimum end-to-end longitudinal extent
     ptcount = inpts.shape[0]
-    not_used = np.ones((ptcount), dtype=bool)
+    used = np.zeros((ptcount), dtype=bool)
 
     lines = []
-    nrec = []
-    na = 0
-    for ii in range(ptcount):
-        if not_used[ii]:
-            print(ii, "/", ptcount)
-            templat = []
-            templon = []
-            templat2 = []
-            templon2 = []
-            templat.append(inpts[ii, 0])
-            templon.append(inpts[ii, 1])
-            not_used[ii] = False
-            t = ii
-            insearchdist = True
-            while insearchdist:
-                mindist = np.inf
-                for jj in range(ptcount):
-                    if not_used[jj]:
-                        dist = sp_dist.euclidean((inpts[t]), (inpts[jj]))
-                        if dist > 0 and dist < mindist:
-                            mindist = dist
-                            rec = jj
-                            distr = dist
-                # have found nearest unused point
-                if mindist < searchdist:
-                    not_used[rec] = False
-                    templat.append(inpts[rec, 0])
-                    templon.append(inpts[rec, 1])
-                    t = rec
-                else:
-                    insearchdist = False
-            # search other direction
-            t = ii
-            insearchdist = True
-            while insearchdist:
-                mindist = np.inf
-                for jj in range(ptcount):
-                    if not_used[jj]:
-                        dist = sp_dist.euclidean((inpts[t]), (inpts[jj]))
-                        if dist > 0 and dist < mindist:
-                            mindist = dist
-                            rec = jj
-                            distr = dist
-                # have found nearest unused point
-                if mindist < searchdist:
-                    not_used[rec] = False
-                    templat2.append(inpts[rec, 0])
-                    templon2.append(inpts[rec, 1])
-                    t = rec
-                else:
-                    insearchdist = False
-            if len(templat2) > 0:
-                templat = templat2[::-1] + templat
-                templon = templon2[::-1] + templon
-            lines.append((templat, templon))
-            nrec.append(len(templat))
+
+    for initial_index in range(ptcount):
+
+        ## If the current point already is part of a line, ignore it.
+        if used[initial_index]:
+            continue
+
+        print(initial_index, "/", ptcount)
+
+        used[initial_index] = False
+
+        templat, templon = follow_line(
+            inpts, initial_index, searchdist, used, 
+            [inpts[initial_index, 0]], [inpts[initial_index, 1]])
+
+        # search other direction
+        templat2, templon2 = follow_line(inpts, initial_index, searchdist, used, [], [])
+
+        ## If there actually was a second direction, add them
+        ## in reverse order.
+        if len(templat2) > 0:
+            templat = templat2[::-1] + templat
+            templon = templon2[::-1] + templon
+
+        lines.append((templat, templon))
+
     print("lines found:", len(lines))
-    filt_lines = []
-    for line in lines:
-        ln_dist = gp_dist.distance(
-            (line[0][0], line[1][0]), (line[0][-1], line[1][-1])
-        ).km
-        lon_extent = max(line[1]) - min(line[1])
-        if ln_dist > minlength and lon_extent > lonex:
-            filt_lines.append(line)
-    lines = filt_lines
+    lines = [l for l in lines if line_filter(l, minlength, lonex)]
+    print(f"lines remaining after filter: {len(lines)}")
     return lines
 
 
