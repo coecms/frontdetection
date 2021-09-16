@@ -220,7 +220,7 @@ def follow_line(inpts, initial_index, searchdist, used, templat=[], templon=[]):
     Builds a line of nearest neighbours, starting with inpts[initial_index], and returns
     their longitudes and latitudes in a tuple of two lists.
     """
-    ptcount = len(used)
+    ptcount = inpts.shape[0]
     current_index = initial_index
     while True:
         shortest_distance_so_far = np.inf
@@ -289,7 +289,7 @@ def linejoin(inpts, searchdist=1.5, minlength=250, lonex=0):
 
         print(initial_index, "/", ptcount)
 
-        used[initial_index] = False
+        used[initial_index] = True
 
         templat, templon = follow_line(
             inpts, initial_index, searchdist, used, 
@@ -305,7 +305,7 @@ def linejoin(inpts, searchdist=1.5, minlength=250, lonex=0):
             templon = templon2[::-1] + templon
 
         lines.append((templat, templon))
-
+    
     print("lines found:", len(lines))
     lines = [l for l in lines if line_filter(l, minlength, lonex)]
     print(f"lines remaining after filter: {len(lines)}")
