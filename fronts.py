@@ -220,6 +220,7 @@ def follow_line(inpts, initial_index, searchdist, used, templat=[], templon=[]):
     Builds a line of nearest neighbours, starting with inpts[initial_index], and returns
     their longitudes and latitudes in a tuple of two lists.
     """
+    ptcount = len(used)
     current_index = initial_index
     while True:
         shortest_distance_so_far = np.inf
