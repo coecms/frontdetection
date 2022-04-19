@@ -17,6 +17,7 @@ def test_front_detection():
     frontdata=fronts.front(t_wet,ua,va,threshold_i=-1e-10,numsmooth=9,minlength=50)
     
     timestring=np.datetime_as_string(test_data.time.data,unit='h')
+
     with open(f'tests/900hPa_fronts_{timestring}.json') as sample_file:
         sample = json.load(sample_file)
 
