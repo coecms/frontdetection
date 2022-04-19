@@ -1,0 +1,6 @@
+pytest
+pylint
+numpy
+xarray
+scipy
+geopy
