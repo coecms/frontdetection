@@ -28,24 +28,26 @@ def test_front_detection():
         assert frontdata == sample
 
 def test_dewpoint():
+    """
+    Test the metpy and internal dewpoint routines are consistent
+    """
 
-    test_data = xr.open_dataset('tests/front_test.nc')#.metpy.quantify()
+    test_data = xr.open_dataset('tests/front_test.nc')
 
-    dp = dewpoint_from_specific_humidity(test_data.level, test_data.t, test_data.q) * units.degK
-
-    print(dp)
+    dp = dewpoint_from_specific_humidity(test_data.level, test_data.t, test_data.q).metpy.convert_units('degK')
     dp2 = fronts.dewpoint(test_data.t, test_data.q, test_data.level, ta_units=str(test_data.t.metpy.units)) * units.degK
 
-    # import pdb; pdb.set_trace()
     assert_allclose(dp, dp2)
 
 def test_wetbulb():
+    """
+    Test the metpy and internal wetbulb routines are consistent
+    """
 
     test_data = xr.open_dataset('tests/front_test.nc').metpy.quantify()
 
-    dp = dewpoint_from_specific_humidity(test_data.level, test_data.t, test_data.q)
+    dp = dewpoint_from_specific_humidity(test_data.level, test_data.t, test_data.q).metpy.convert_units('degK')
+    dp2 = wet_bulb_temperature(test_data.level, test_data.t, dp) * units.degK
 
-    wbt = wet_bulb_temperature(test_data.level, test_data.t, dp)
-
-    print(wbt)
+    assert_allclose(dp, dp2)
 
