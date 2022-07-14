@@ -31,7 +31,7 @@ def test_dewpoint():
 
     test_data = xr.open_dataset('tests/front_test.nc')#.metpy.quantify()
 
-    dp = dewpoint_from_specific_humidity(test_data.level, test_data.t, test_data.q)
+    dp = dewpoint_from_specific_humidity(test_data.level, test_data.t, test_data.q) * units.degK
 
     print(dp)
     dp2 = fronts.dewpoint(test_data.t, test_data.q, test_data.level, ta_units=str(test_data.t.metpy.units)) * units.degK
