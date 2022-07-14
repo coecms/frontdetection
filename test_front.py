@@ -2,6 +2,7 @@ import fronts
 import json
 import xarray as xr
 import numpy as np
+from xarray.testing import assert_allclose
 
 from metpy.calc import wet_bulb_temperature, dewpoint_from_specific_humidity
 from metpy.units import units
@@ -36,7 +37,7 @@ def test_dewpoint():
     dp2 = fronts.dewpoint(test_data.t, test_data.q, test_data.level, ta_units=str(test_data.t.metpy.units)) * units.degK
 
     # import pdb; pdb.set_trace()
-    assert dp == dp2
+    assert_allclose(dp, dp2)
 
 def test_wetbulb():
 
