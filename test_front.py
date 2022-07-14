@@ -35,7 +35,7 @@ def test_dewpoint():
     print(dp)
     dp2 = fronts.dewpoint(test_data.t, test_data.q, test_data.level, ta_units=str(test_data.t.metpy.units)) * units.degK
 
-    import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
     assert dp == dp2
 
 def test_wetbulb():
