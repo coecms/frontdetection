@@ -3,6 +3,9 @@ import json
 import xarray as xr
 import numpy as np
 
+from metpy.calc import wet_bulb_temperature, dewpoint_from_specific_humidity
+from metpy.units import units
+
 def test_front_detection():
 
     test_data = xr.open_dataset('tests/front_test.nc')
@@ -22,3 +25,26 @@ def test_front_detection():
         sample = json.load(sample_file)
 
         assert frontdata == sample
+
+def test_dewpoint():
+
+    test_data = xr.open_dataset('tests/front_test.nc')#.metpy.quantify()
+
+    dp = dewpoint_from_specific_humidity(test_data.level, test_data.t, test_data.q)
+
+    print(dp)
+    dp2 = fronts.dewpoint(test_data.t, test_data.q, test_data.level, ta_units=str(test_data.t.metpy.units)) * units.degK
+
+    import pdb; pdb.set_trace()
+    assert dp == dp2
+
+def test_wetbulb():
+
+    test_data = xr.open_dataset('tests/front_test.nc').metpy.quantify()
+
+    dp = dewpoint_from_specific_humidity(test_data.level, test_data.t, test_data.q)
+
+    wbt = wet_bulb_temperature(test_data.level, test_data.t, dp)
+
+    print(wbt)
+
