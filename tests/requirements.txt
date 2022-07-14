@@ -4,3 +4,4 @@ numpy
 xarray
 scipy
 geopy
+metpy
