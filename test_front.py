@@ -16,9 +16,17 @@ def test_front_detection():
     va = test_data.v
     hus = test_data.q
     
-    t_wet=fronts.wetbulb(ta,hus,900,steps=120)
+    t_wet = fronts.wetbulb(ta,
+                           hus,
+                           900,
+                           steps=120)
     
-    frontdata=fronts.front(t_wet,ua,va,threshold_i=-1e-10,numsmooth=9,minlength=50)
+    frontdata = fronts.front(t_wet,
+                             ua,
+                             va,
+                             threshold_i=-1e-10,
+                             numsmooth=9,
+                             minlength=50)
     
     timestring=np.datetime_as_string(test_data.time.data,unit='h')
 
