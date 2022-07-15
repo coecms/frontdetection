@@ -27,27 +27,33 @@ def test_front_detection():
 
         assert frontdata == sample
 
-def test_dewpoint():
+def test_metpy():
     """
-    Test the metpy and internal dewpoint routines are consistent
+    Test the metpy and internal routines are consistent
     """
 
     test_data = xr.open_dataset('tests/front_test.nc')
 
-    dp = dewpoint_from_specific_humidity(test_data.level, test_data.t, test_data.q).metpy.convert_units('degK')
-    dp2 = fronts.dewpoint(test_data.t, test_data.q, test_data.level, ta_units=str(test_data.t.metpy.units)) * units.degK
+    dewpoint = dewpoint_from_specific_humidity(test_data.level, 
+                                         test_data.t, 
+                                         test_data.q).metpy.convert_units('degK')
+    dewpoint2 = fronts.dewpoint(test_data.t, 
+                                test_data.q, 
+                                test_data.level, 
+                                ta_units=str(test_data.t.metpy.units)) * units.degK
 
-    assert_allclose(dp, dp2)
+    assert_allclose(dewpoint, dewpoint2)
 
-def test_wetbulb():
-    """
-    Test the metpy and internal wetbulb routines are consistent
-    """
+    # Uses the dewpoint calculated above
+    wb_temp = wet_bulb_temperature(test_data.level, 
+                                  test_data.t, 
+                                  dewpoint).metpy.convert_units('degK')
+    wb_temp2 = fronts.wetbulb(test_data.t, 
+                              test_data.q, 
+                              test_data.level, 
+                              steps=100, 
+                              ta_units=str(test_data.t.metpy.units)).metpy.convert_units('degK')
 
-    test_data = xr.open_dataset('tests/front_test.nc').metpy.quantify()
-
-    dp = dewpoint_from_specific_humidity(test_data.level, test_data.t, test_data.q).metpy.convert_units('degK')
-    dp2 = wet_bulb_temperature(test_data.level, test_data.t, dp) * units.degK
-
-    assert_allclose(dp, dp2)
+    # This result is not as close as dewpoint. Still probably good enough
+    assert_allclose(wb_temp, wb_temp2, rtol=5e-3)
 
