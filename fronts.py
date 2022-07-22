@@ -54,7 +54,7 @@ def wetbulb(ta, hus, plev, steps=100, ta_units=None):
 
 
 def dewpoint(ta, hus, plev, ta_units=None):
-    # calculates depoint temperature from pressure-level data
+    # calculates dewpoint temperature from pressure-level data
     # Inputs: ta - temperature field (xarray)
     #         hus - specific humidity field (xarray)
     #         plev - the level of the data (in hPa, scalar)
