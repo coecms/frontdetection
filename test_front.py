@@ -1,11 +1,18 @@
 import fronts
+import fronts_legacy
 import json
 import xarray as xr
 import numpy as np
 from xarray.testing import assert_allclose
+from numpy.testing import assert_allclose as np_assert
+import unittest
+from unittest import TestCase
 
 from metpy.calc import wet_bulb_temperature, dewpoint_from_specific_humidity
 from metpy.units import units
+
+import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
 
 
 def test_front_detection():
@@ -17,16 +24,18 @@ def test_front_detection():
     va = test_data.v
     hus = test_data.q
     
-    t_wet=fronts.wetbulb(ta,hus,900,steps=120)
+    t_wet=fronts_legacy.wetbulb(ta,hus,900,steps=120)
     
-    frontdata=fronts.front(t_wet,ua,va,threshold_i=-1e-10,numsmooth=9,minlength=50)
+    frontdata=fronts_legacy.front(t_wet,ua,va,threshold_i=-1e-10,numsmooth=9,minlength=50)
     
     timestring=np.datetime_as_string(test_data.time.data,unit='h')
 
     with open(f'tests/900hPa_fronts_{timestring}.json') as sample_file:
         sample = json.load(sample_file)
 
-        assert frontdata == sample
+        assert frontdata == sample, f"result isn't comparable with test data"
+
+    return frontdata, t_wet
 
 
 def test_metpy():
@@ -39,7 +48,7 @@ def test_metpy():
     dewpoint = dewpoint_from_specific_humidity(test_data.level, 
                                          test_data.t, 
                                          test_data.q).metpy.convert_units('degK')
-    dewpoint2 = fronts.dewpoint(test_data.t, 
+    dewpoint2 = fronts_legacy.dewpoint(test_data.t, 
                                 test_data.q, 
                                 test_data.level, 
                                 ta_units=str(test_data.t.metpy.units)) * units.degK
@@ -50,14 +59,14 @@ def test_metpy():
     wb_temp = wet_bulb_temperature(test_data.level, 
                                   test_data.t, 
                                   dewpoint).metpy.convert_units('degK')
-    wb_temp2 = fronts.wetbulb(test_data.t, 
+    wb_temp2 = fronts_legacy.wetbulb(test_data.t, 
                               test_data.q, 
                               test_data.level, 
-                              steps=100, 
+                              steps=150, 
                               ta_units=str(test_data.t.metpy.units)).metpy.convert_units('degK')
 
     # This result is not as close as dewpoint. Still probably good enough
-    assert_allclose(wb_temp, wb_temp2, rtol=5e-3)
+    assert_allclose(wb_temp, wb_temp2, rtol=1e-3)
 
 
 def test_front_detection_metpy():
@@ -90,4 +99,6 @@ def test_front_detection_metpy():
     with open(f'tests/900hPa_fronts_{timestring}.json') as sample_file:
         sample = json.load(sample_file)
 
-        assert frontdata == sample
+        assert frontdata == sample, f"result isn't comparable with test data"
+
+    return frontdata, t_wet
