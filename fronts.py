@@ -4,64 +4,40 @@ import scipy.signal
 import xarray as xr
 import scipy.spatial.distance as sp_dist
 import geopy.distance as gp_dist
+import scipy.interpolate as interp
 
 def zeropoints(data, dim1, dim2):
-    # finds zero-crossing points in a gridded data set along the lines of each dimension
-    # inputs: data - 2d data field (numpy array)
-    #         dim1 - coords of the first dim of data (np array)
-    #         dim2 - coords of the second dim of data (np array)
-    n1, n2 = data.shape
-    # assuming regularly spaced grid:
-    d_dim2 = dim2[1] - dim2[0]
-    d_dim1 = dim1[1] - dim1[0]
-    tloc_1 = []
-    tloc_2 = []
-    for lonn in range(0, n2 - 1):
-        for latn in range(0, n1 - 1):
-            flag = False
-            if data[latn, lonn] == 0:
-                tloc_1.append([dim1[latn], dim2[lonn]])
-                flag = True
-            else:
-                if (
-                    np.isfinite(data[latn, lonn])
-                    and np.isfinite(data[latn, lonn + 1])
-                    and not flag
-                ):
-                    if (data[latn, lonn] > 0 and data[latn, lonn + 1] < 0) or (
-                        data[latn, lonn] < 0 and data[latn, lonn + 1] > 0
-                    ):
-                        tloc_1.append(
-                            [
-                                dim1[latn],
-                                dim2[lonn]
-                                + d_dim2
-                                * np.abs(
-                                    data[latn, lonn]
-                                    / (data[latn, lonn] - data[latn, lonn + 1])
-                                ),
-                            ]
-                        )
-                if (
-                    np.isfinite(data[latn, lonn])
-                    and np.isfinite(data[latn + 1, lonn])
-                    and not flag
-                ):
-                    if (data[latn, lonn] > 0 and data[latn + 1, lonn] < 0) or (
-                        data[latn, lonn] < 0 and data[latn + 1, lonn] > 0
-                    ):
-                        tloc_2.append(
-                            [
-                                dim1[latn]
-                                + d_dim1
-                                * np.abs(
-                                    data[latn, lonn]
-                                    / (data[latn, lonn] - data[latn + 1, lonn])
-                                ),
-                                dim2[lonn],
-                            ]
-                        )
-    return np.array(tloc_1 + tloc_2)
+    """
+    finds zero-crossing points in a gridded data set along the lines of each dimension
+    inputs: data - 2d data field (numpy array)
+            dim1 - coords of the first dim of data (np array)
+            dim2 - coords of the second dim of data (np array)
+    """
+
+    ## Find points where the value itself is zero:
+    zero_locations = [
+        [dim1[idx1], dim2[idx2]] 
+        for idx1, idx2 in zip(*np.where(data==0))
+    ]
+
+    ## Find zeropoints along latitude
+    for dim1_val, dim2_data in zip(dim1, data):
+        # Multiply each data point with the next. Negative values then indicate change in sign
+        indicator_array = dim2_data[:-1] * dim2_data[1:]
+        zero_locations.extend([
+            [dim1_val, interp.interp1d(dim2_data[i:i+2], dim2[i:i+2])(0)] 
+            for i in np.where(indicator_array < 0)[0]
+        ])
+
+    for dim2_val, dim1_data in zip(dim2, data.T):
+        # Multiply each data point with the next. Negative values then indicate change in sign
+        indicator_array = dim1_data[:-1] * dim1_data[1:]
+        zero_locations.extend([
+            [interp.interp1d(dim1_data[i:i+2], dim1[i:i+2])(0), dim2_val]
+            for i in np.where(indicator_array < 0)[0]
+        ])
+
+    return np.array(zero_locations)
 
 
 def frontfields(data, ua, va, threshold=-0.3e-10):
