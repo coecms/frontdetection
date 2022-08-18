@@ -139,3 +139,82 @@ def zeropoints(data, dim1, dim2):
                             ]
                         )
     return np.array(tloc_1 + tloc_2)
+
+def linejoin(inpts, searchdist=1.5, minlength=250, lonex=0):
+    # turns a list of lat-lon points into a list of joined lines
+    # INPUTS: inpts - the list of points (list of lat-lon points)
+    #         searchdist - degree radius around each point that other points within are
+    #                      deemed to be part of the same line
+    #         minlength - minimum end-to-end length of the lines (in km)
+    #         lonex - minimum end-to-end longitudinal extent
+    ptcount = inpts.shape[0]
+    not_used = np.ones((ptcount), dtype=bool)
+
+    lines = []
+    nrec = []
+    na = 0
+    for ii in range(ptcount):
+        if not_used[ii]:
+            #print(ii, "/", ptcount)
+            templat = []
+            templon = []
+            templat2 = []
+            templon2 = []
+            templat.append(inpts[ii, 0])
+            templon.append(inpts[ii, 1])
+            not_used[ii] = False
+            t = ii
+            insearchdist = True
+            while insearchdist:
+                mindist = np.inf
+                for jj in range(ptcount):
+                    if not_used[jj]:
+                        dist = sp_dist.euclidean((inpts[t]), (inpts[jj]))
+                        if dist > 0 and dist < mindist:
+                            mindist = dist
+                            rec = jj
+                            distr = dist
+                # have found nearest unused point
+                if mindist < searchdist:
+                    not_used[rec] = False
+                    templat.append(inpts[rec, 0])
+                    templon.append(inpts[rec, 1])
+                    t = rec
+                else:
+                    insearchdist = False
+            # search other direction
+            t = ii
+            insearchdist = True
+            while insearchdist:
+                mindist = np.inf
+                for jj in range(ptcount):
+                    if not_used[jj]:
+                        dist = sp_dist.euclidean((inpts[t]), (inpts[jj]))
+                        if dist > 0 and dist < mindist:
+                            mindist = dist
+                            rec = jj
+                            distr = dist
+                # have found nearest unused point
+                if mindist < searchdist:
+                    not_used[rec] = False
+                    templat2.append(inpts[rec, 0])
+                    templon2.append(inpts[rec, 1])
+                    t = rec
+                else:
+                    insearchdist = False
+            if len(templat2) > 0:
+                templat = templat2[::-1] + templat
+                templon = templon2[::-1] + templon
+            lines.append((templat, templon))
+            nrec.append(len(templat))
+    #print("lines found:", len(lines))
+    filt_lines = []
+    for line in lines:
+        ln_dist = gp_dist.distance(
+            (line[0][0], line[1][0]), (line[0][-1], line[1][-1])
+        ).km
+        lon_extent = max(line[1]) - min(line[1])
+        if ln_dist > minlength and lon_extent > lonex:
+            filt_lines.append(line)
+    lines = filt_lines
+    return lines
