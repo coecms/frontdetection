@@ -90,7 +90,8 @@ def test_front_detection_metpy():
                              va,
                              threshold_i=-1e-10,
                              numsmooth=9,
-                             minlength=50)
+                             minlength=50,
+                             linejoin_set=0)
     
     timestring=np.datetime_as_string(test_data.time.data,unit='h')
 
@@ -123,7 +124,7 @@ def test_plot(data):
     for n in range(len(clines)):
         ax.plot(clines[n][1],clines[n][0],'b',ms=1,transform=ccrs.PlateCarree())
     cbar=fig.colorbar(f)
-    fig.savefig('front_output_test.pdf')
+    fig.savefig('front_output_linegraph.pdf')
     plt.show()
 
 test_plot(test_front_detection_metpy())

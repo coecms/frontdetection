@@ -36,6 +36,8 @@ Here we will briefly describe each function.
 
 - linejoin: Turns a list of latitude and longitude points into a list of joined lines.
 
+- linejoin_graph: Similar to linejoin + line_filter but uses a graph based linejoin method with scipy. It's faster but prodcues a slightly different answer.
+
 - smoother: Smooths an input 2-d xarray using a given kernel and a number of passes.
 
 - front: Identifies fronts in the data using the Berry et al. method.

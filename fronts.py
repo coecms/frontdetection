@@ -1,4 +1,5 @@
 # module imports
+import sys
 import numpy as np
 import scipy.signal
 import xarray as xr
@@ -197,6 +198,61 @@ def linejoin(inpts, searchdist=1.5, minlength=250, lonex=0):
     return lines
 
 
+def linejoin_graph(inpts, searchdist: float=1.5, minlength: float=250, lonex: float=0):
+    """
+    Turns a list of lat-lon points into a list of joined lines
+    Args:
+        inpts - the list of points (list of lat-lon points)
+        searchdist - degree radius around each point that other points within are
+                     deemed to be part of the same line
+        minlength - minimum end-to-end length of the lines (in km)
+        lonex - minimum end-to-end longitudinal extent
+    Returns:
+        List with each member a tuple of (lats, lons) for each line found
+    """
+
+    tree = scipy.spatial.KDTree(inpts)
+
+    assert tree.m == 2, f"Expected 2d input points, found {tree.m}d"
+
+    distances = tree.sparse_distance_matrix(tree, searchdist)
+
+    # Cull to only the minimal connections
+    span = scipy.sparse.csgraph.minimum_spanning_tree(distances)
+
+    # Get the components
+    ncomp, comp_labels = scipy.sparse.csgraph.connected_components(span)
+
+    lines = []
+
+    for c in range(ncomp):
+        comp_indices = np.arange(comp_labels.size)[comp_labels == c]
+        if len(comp_indices) <= 1:
+            continue
+
+        start = comp_indices[1]
+
+        # This ordering may not start at the start of the span, but it will end at the end of it
+        order = scipy.sparse.csgraph.depth_first_order(span, start, return_predecessors=False, directed=False)
+
+        # Search the other way to get the correct ordering for the full path
+        order = scipy.sparse.csgraph.depth_first_order(span, order[-1], return_predecessors=False, directed=False)
+
+        # Add the coordinates from this path to the output list
+        lines.append((inpts[order,0], inpts[order,1]))
+
+    # Filter from the previous version
+    filt_lines=[]
+    for line in lines:
+        ln_dist=gp_dist.distance((line[0][0],line[1][0]),(line[0][-1],line[1][-1])).km
+        lon_extent=max(line[1])-min(line[1])
+        if ln_dist>minlength and lon_extent>lonex:
+            filt_lines.append(line)
+    lines=filt_lines
+
+    return lines
+
+
 def smoother(data, numsmooth=9, smooth_kernel=np.ones((3, 3)) / 9):
     # smooths an input 2-d xarray using a given kernel and number of passes
     smoothfunc = lambda x: scipy.signal.convolve2d(
@@ -222,6 +278,7 @@ def front(
     numsmooth=3,
     smooth_kernel=np.ones((3, 3)) / 9,
     minlength=250,
+    linejoin_set=0,
 ):
     # identifies fronts in data using Berry et al. method
     # INPUTS: data         - field to find fronts upon
@@ -232,6 +289,8 @@ def front(
     #         numsmooth    - number of passes of the smoothing kernel
     #         smooth_kernel - the smoothing kernel
     #         minlength     - minimum end-to-end front length (km)
+    #         linejoin_set  - 0 = original linejoin
+    #                         1 = faster linejoin_graph (but different answer)
     # define internal constants/parameters here
     re = 6371e3
 
@@ -274,9 +333,20 @@ def front(
     wpts = np.array(wpts)
     spts = np.array(spts)
 
-    clines = linejoin(cpts, minlength=minlength)
-    wlines = linejoin(wpts, minlength=minlength)
-    slines = linejoin(spts, minlength=minlength)
+    if linejoin_set == 0:
+        clines = linejoin(cpts, minlength=minlength)
+        wlines = linejoin(wpts, minlength=minlength)
+        slines = linejoin(spts, minlength=minlength)
+    elif linejoin_set == 1:
+        clines = linejoin_graph(cpts, minlength=minlength)
+        wlines = linejoin_graph(wpts, minlength=minlength)
+        slines = linejoin_graph(spts, minlength=minlength)
+    else:
+        print('--------------------------------------------------------')
+        print('linejoin_set must be 0, or 1')
+        print('0 = original linejoin, 1 = faster linejoin_graph (but different answer)')
+        print('------------------- Exiting code -----------------------')
+        sys.exit()
 
     clinemag = []
     wlinemag = []
