@@ -198,7 +198,7 @@ def linejoin(inpts, searchdist=1.5, minlength=250, lonex=0):
     return lines
 
 
-def linejoin_graph(inpts, searchdist: float=1.5, minlength: float=250, lonex: float=0):
+def linejoin_graph(inpts, searchdist: float=1.12, minlength: float=250, lonex: float=0):
     """
     Turns a list of lat-lon points into a list of joined lines
     Args:
@@ -306,6 +306,7 @@ def front(
         smoothcount += 1
 
     loc, fr_speed, mag = frontfields(data, u, v, threshold_i)
+    # overlay scatter plot onto fig
     if "lon" in data.dims:
         out = zeropoints(loc.data, loc.lat.data, loc.lon.data)
     else:
@@ -397,6 +398,9 @@ def front(
         "cold_fronts": clinemag,
         "warm_fronts": wlinemag,
         "stationary_fronts": slinemag,
+        "cpts": cpts,
+        "wpts": wpts,
+        "spts": spts
     }
 
     return frontdata
