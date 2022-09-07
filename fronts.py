@@ -277,7 +277,8 @@ def front(
     threshhold_s=1.5,
     numsmooth=3,
     smooth_kernel=np.ones((3, 3)) / 9,
-    minlength=250,
+    minlength=200,
+    searchdist=1.12,
     linejoin_set=0,
 ):
     # identifies fronts in data using Berry et al. method
@@ -339,9 +340,9 @@ def front(
         wlines = linejoin(wpts, minlength=minlength)
         slines = linejoin(spts, minlength=minlength)
     elif linejoin_set == 1:
-        clines = linejoin_graph(cpts, minlength=minlength)
-        wlines = linejoin_graph(wpts, minlength=minlength)
-        slines = linejoin_graph(spts, minlength=minlength)
+        clines = linejoin_graph(cpts, minlength=minlength, searchdist=searchdist)
+        wlines = linejoin_graph(wpts, minlength=minlength, searchdist=searchdist)
+        slines = linejoin_graph(spts, minlength=minlength, searchdist=searchdist)
     else:
         print('--------------------------------------------------------')
         print('linejoin_set must be 0, or 1')
