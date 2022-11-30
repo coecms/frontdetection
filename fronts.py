@@ -346,7 +346,7 @@ def front(
     else:
         print('--------------------------------------------------------')
         print('linejoin_set must be 0, or 1')
-        print('0 = original linejoin, 1 = faster linejoin_graph (but different answer)')
+        print('0 = original linejoin, 1 = faster linejoin_graph (slightly different answer)')
         print('------------------- Exiting code -----------------------')
         sys.exit()
 

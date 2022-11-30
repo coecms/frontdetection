@@ -12,30 +12,6 @@ from metpy.units import units
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 
-
-def test_front_detection():
-
-    test_data = xr.open_dataset('tests/front_test.nc')
-
-    ta = test_data.t
-    ua = test_data.u
-    va = test_data.v
-    hus = test_data.q
-    
-    t_wet=fronts_legacy.wetbulb(ta,hus,900,steps=120)
-    
-    frontdata=fronts_legacy.front(t_wet,ua,va,threshold_i=-1e-10,numsmooth=9,minlength=50)
-    
-    timestring=np.datetime_as_string(test_data.time.data,unit='h')
-
-    with open(f'tests/900hPa_fronts_{timestring}.json') as sample_file:
-        sample = json.load(sample_file)
-
-        assert frontdata == sample, f"result isn't comparable with test data"
-
-    return frontdata, t_wet
-
-
 def test_metpy():
     """
     Test the metpy and internal routines are consistent
@@ -67,7 +43,9 @@ def test_metpy():
     assert_allclose(wb_temp, wb_temp2, rtol=1e-3)
 
 
-def test_front_detection_metpy():
+def test_front_detection_metpy(line=0):
+
+    line = line
 
     test_data = xr.open_dataset('tests/front_test.nc')
 
@@ -91,7 +69,8 @@ def test_front_detection_metpy():
                              threshold_i=-1e-10,
                              numsmooth=9,
                              minlength=50,
-                             linejoin_set=0)
+                             searchdist=1.125,
+                             linejoin_set=line)
     
     timestring=np.datetime_as_string(test_data.time.data,unit='h')
 
@@ -99,6 +78,28 @@ def test_front_detection_metpy():
         sample = json.load(sample_file)
 
         #assert frontdata == sample, f"result isn't comparable with test data"
+
+    return frontdata, t_wet
+
+def test_legacy_front_detection():
+
+    test_data = xr.open_dataset('tests/front_test.nc')
+
+    ta = test_data.t
+    ua = test_data.u
+    va = test_data.v
+    hus = test_data.q
+    
+    t_wet=fronts_legacy.wetbulb(ta,hus,900,steps=120)
+    
+    frontdata=fronts_legacy.front(t_wet,ua,va,threshold_i=-1e-10,numsmooth=9,minlength=50)
+    
+    timestring=np.datetime_as_string(test_data.time.data,unit='h')
+
+    with open(f'tests/900hPa_fronts_{timestring}.json') as sample_file:
+        sample = json.load(sample_file)
+
+        assert frontdata == sample, f"result isn't comparable with test data"
 
     return frontdata, t_wet
 
@@ -127,4 +128,4 @@ def test_plot(data):
     fig.savefig('front_output_linegraph.pdf')
     plt.show()
 
-test_plot(test_front_detection_metpy())
+test_plot(test_front_detection_metpy(line=1))
