@@ -54,46 +54,46 @@ def frontfields(data, ua, va, threshold=-0.3e-10):
         dtdx = (
             data.differentiate("lon")
             * 180
-            / (np.pi * erad * xr.ufuncs.cos(data.lat * np.pi / 180))
+            / (np.pi * erad * xr.apply_ufunc(np.cos, data.lat * np.pi / 180, dask='allowed'))
         )
-        mag = xr.ufuncs.sqrt(dtdy ** 2 + dtdx ** 2)
+        mag = xr.apply_ufunc(np.sqrt, dtdy ** 2 + dtdx ** 2, dask='allowed')
         dmagdy = mag.differentiate("lat") * 180 / (np.pi * erad)
         dmagdx = (
             mag.differentiate("lon")
             * 180
-            / (np.pi * erad * xr.ufuncs.cos(mag.lat * np.pi / 180))
+            / (np.pi * erad * xr.apply_ufunc(np.cos, mag.lat * np.pi / 180, dask='allowed'))
         )
         fr_func = ((dtdx * dmagdx) + (dtdy * dmagdy)) / mag
-        maggradmag = xr.ufuncs.sqrt(dmagdy ** 2 + dmagdx ** 2)
+        maggradmag = xr.apply_ufunc(np.sqrt, dmagdy ** 2 + dmagdx ** 2, dask='allowed')
         fr_speed = (ua * dmagdx + va * dmagdy) / maggradmag
         mgmdy = dmagdy.differentiate("lat") * 180 / (np.pi * erad)
         mgmdx = (
             dmagdx.differentiate("lon")
             * 180
-            / (np.pi * erad * xr.ufuncs.cos(mag.lat * np.pi / 180))
+            / (np.pi * erad * xr.apply_ufunc(np.cos, mag.lat * np.pi / 180, dask='allowed'))
         )
     else:
         dtdy = data.differentiate("latitude") * 180 / (np.pi * erad)
         dtdx = (
             data.differentiate("longitude")
             * 180
-            / (np.pi * erad * xr.ufuncs.cos(data.latitude * np.pi / 180))
+            / (np.pi * erad * xr.apply_ufunc(np.cos, data.latitude * np.pi / 180, dask='allowed'))
         )
-        mag = xr.ufuncs.sqrt(dtdy ** 2 + dtdx ** 2)
+        mag = xr.apply_ufunc(np.sqrt, dtdy ** 2 + dtdx ** 2, dask='allowed')
         dmagdy = mag.differentiate("latitude") * 180 / (np.pi * erad)
         dmagdx = (
             mag.differentiate("longitude")
             * 180
-            / (np.pi * erad * xr.ufuncs.cos(mag.latitude * np.pi / 180))
+            / (np.pi * erad * xr.apply_ufunc(np.cos, mag.latitude * np.pi / 180, dask='allowed'))
         )
         fr_func = ((dtdx * dmagdx) + (dtdy * dmagdy)) / mag
-        maggradmag = xr.ufuncs.sqrt(dmagdy ** 2 + dmagdx ** 2)
+        maggradmag = xr.apply_ufunc(np.sqrt, dmagdy ** 2 + dmagdx ** 2, dask='allowed')
         fr_speed = (ua * dmagdx + va * dmagdy) / maggradmag
         mgmdy = dmagdy.differentiate("latitude") * 180 / (np.pi * erad)
         mgmdx = (
             dmagdx.differentiate("longitude")
             * 180
-            / (np.pi * erad * xr.ufuncs.cos(mag.latitude * np.pi / 180))
+            / (np.pi * erad * xr.apply_ufunc(np.cos, mag.latitude * np.pi / 180, dask='allowed'))
         )
     loc = mgmdy + mgmdx
     loc.data[fr_func > 0] = np.nan
@@ -301,9 +301,9 @@ def front(
     )
     smoothcount = 0
     while smoothcount < numsmooth:
-        data = xr.apply_ufunc(smoothfunc, data)
-        u = xr.apply_ufunc(smoothfunc, u)
-        v = xr.apply_ufunc(smoothfunc, v)
+        data = xr.apply_ufunc(smoothfunc, data, dask='allowed')
+        u = xr.apply_ufunc(smoothfunc, u, dask='allowed')
+        v = xr.apply_ufunc(smoothfunc, v, dask='allowed')
         smoothcount += 1
 
     loc, fr_speed, mag = frontfields(data, u, v, threshold_i)
